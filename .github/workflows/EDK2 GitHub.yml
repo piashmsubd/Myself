@@ -12,38 +12,32 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout Device Tree
+    - name: Checkout
       uses: actions/checkout@v3
-      with:
-        path: device/nubia/NX669J
-        
+      
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential uuid-dev iasl git nasm python3-distutils gcc-aarch64-linux-gnu
+        sudo apt-get install -y build-essential uuid-dev iasl git nasm python3-distutils gcc-aarch64-linux-gnu acpica-tools
         
     - name: Clone EDK2
       run: |
-        git clone https://github.com/tianocore/edk2.git --recursive
+        git clone https://github.com/tianocore/edk2.git
         cd edk2
         git submodule update --init
         make -C BaseTools
         
-    - name: Clone EDK2 Platforms
+    - name: Setup Build Files
       run: |
-        git clone https://github.com/tianocore/edk2-platforms.git
-        
-    - name: Setup Build Environment
-      run: |
-        cd edk2
-        . edksetup.sh
-        export PACKAGES_PATH=$WORKSPACE/edk2:$WORKSPACE/edk2-platforms:$WORKSPACE/device/nubia/NX669J
-        export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
+        mkdir -p edk2/NX669J
+        cp NX669J.dsc edk2/NX669J/
+        cp NX669J.fdf edk2/NX669J/
         
     - name: Build EDK2
       run: |
         cd edk2
-        build -a AARCH64 -t GCC5 -p device/nubia/NX669J/NX669J.dsc -b RELEASE
+        . edksetup.sh
+        build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
         
     - name: Upload Build
       uses: actions/upload-artifact@v3
