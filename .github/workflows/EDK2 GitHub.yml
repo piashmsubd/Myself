@@ -27,17 +27,19 @@ jobs:
         git submodule update --init
         make -C BaseTools
         
-    - name: Setup Build Files
+    - name: Create Build Directory
       run: |
-        mkdir -p edk2/NX669J
-        cp device/nubia/NX669J/NX669J.dsc edk2/NX669J/
-        cp device/nubia/NX669J/NX669J.fdf edk2/NX669J/
+        mkdir -p device/nubia/NX669J
+        cp NX669J.dsc device/nubia/NX669J/
+        cp NX669J.fdf device/nubia/NX669J/
         
     - name: Build EDK2
       run: |
         cd edk2
         . edksetup.sh
-        build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
+        export PACKAGES_PATH=$PWD:$PWD/../device/nubia/NX669J
+        export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
+        build -a AARCH64 -t GCC5 -p ../device/nubia/NX669J/NX669J.dsc -b RELEASE
         
     - name: Upload Build
       uses: actions/upload-artifact@v3
