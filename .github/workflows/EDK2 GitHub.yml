@@ -30,8 +30,8 @@ jobs:
     - name: Create Build Directory
       run: |
         mkdir -p device/nubia/NX669J
-        cp NX669J.dsc device/nubia/NX669J/
-        cp NX669J.fdf device/nubia/NX669J/
+        cp device/nubia/NX669J/NX669J.dsc device/nubia/NX669J/
+        cp device/nubia/NX669JNX669J.fdf device/nubia/NX669J/
         
     - name: Build EDK2
       run: |
