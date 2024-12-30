@@ -30,8 +30,8 @@ jobs:
     - name: Setup Build Files
       run: |
         mkdir -p edk2/NX669J
-        cp NX669J.dsc edk2/NX669J/
-        cp NX669J.fdf edk2/NX669J/
+        cp device/nubia/NX669J/NX669J.dsc edk2/NX669J/
+        cp device/nubia/NX669J/NX669J.fdf edk2/NX669J/
         
     - name: Build EDK2
       run: |
