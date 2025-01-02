@@ -17,33 +17,35 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        submodules: recursive
-      
+        submodules: true
+        
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential uuid-dev iasl git nasm python3-distutils gcc-aarch64-linux-gnu acpica-tools
+        sudo apt-get install -y build-essential uuid-dev iasl git nasm python3-distutils gcc-aarch64-linux-gnu acpica-tools python3 python3-pip
         
     - name: Clone EDK2
       run: |
-        git clone https://github.com/tianocore/edk2.git --depth=1
+        cd $GITHUB_WORKSPACE
+        git clone https://github.com/tianocore/edk2.git --recursive
         cd edk2
-        git submodule update --init
+        git submodule update --init --recursive
         make -C BaseTools
+        . edksetup.sh
         
-    - name: Setup Build Environment
+    - name: Copy Device Files
+      run: |
+        mkdir -p edk2/NX669J
+        cp NX669J.dsc edk2/NX669J/
+        cp NX669J.fdf edk2/NX669J/
+        
+    - name: Build EDK2
       run: |
         cd edk2
         . edksetup.sh
-        export PACKAGES_PATH=$PWD:$PWD/../
-        export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
-        
-    - name: Build Project
-      run: |
-        cd edk2
         build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
         
-    - name: Upload Artifacts
+    - name: Upload Build
       uses: actions/upload-artifact@v3
       with:
         name: edk2-NX669J
