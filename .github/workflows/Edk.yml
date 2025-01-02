@@ -30,17 +30,15 @@ jobs:
         cd edk2
         git submodule update --init --recursive
         make -C BaseTools
-        . edksetup.sh BaseTools
         
-    - name: Setup Device Files
+    - name: Setup Files
       run: |
-        pwd
-        ls -la
         mkdir -p edk2/NX669J
-        cp -v *.{dsc,fdf} edk2/NX669J/ || true
+        cp -v *.dsc edk2/NX669J/
+        cp -v *.fdf edk2/NX669J/
         ls -la edk2/NX669J/
         
-    - name: Build Project
+    - name: Build EDK2
       run: |
         cd edk2
         . edksetup.sh
@@ -49,15 +47,15 @@ jobs:
         export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
         build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
         
-    - name: Create Boot Image
+    - name: Generate Boot Image
       run: |
         cd edk2/Build/NX669J/RELEASE_GCC5/FV
+        mkdir -p tmp
         dd if=/dev/zero of=uefi.img bs=1M count=100
         mkfs.vfat uefi.img
-        mkdir -p tmp
-        sudo mount uefi.img tmp
+        sudo mount uefi.img tmp/
         sudo cp *.efi tmp/
-        sudo umount tmp
+        sudo umount tmp/
         gzip -c uefi.img > uefi.img.gz
         abootimg --create boot.img -k uefi.img.gz -r /dev/null
         
