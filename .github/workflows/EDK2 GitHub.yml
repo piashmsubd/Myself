@@ -11,9 +11,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    steps:
-    - name: Checkout
+        steps:
+    - name: Checkout Device Tree
       uses: actions/checkout@v3
+      with:
+        path: device/nubia/NX669J
       
     - name: Install Dependencies
       run: |
