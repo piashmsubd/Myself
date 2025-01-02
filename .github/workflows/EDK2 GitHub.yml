@@ -26,18 +26,18 @@ jobs:
         
     - name: Clone EDK2
       run: |
-        cd $GITHUB_WORKSPACE
+        pwd
+        ls -la
         git clone https://github.com/tianocore/edk2.git --recursive
         cd edk2
         git submodule update --init --recursive
         make -C BaseTools
-        . edksetup.sh
         
-    - name: Copy Device Files
+    - name: Setup Files
       run: |
         mkdir -p edk2/NX669J
-        cp NX669J.dsc edk2/NX669J/
-        cp NX669J.fdf edk2/NX669J/
+        sudo cp NX669J.dsc edk2/NX669J/
+        sudo cp NX669J.fdf edk2/NX669J/
         
     - name: Build EDK2
       run: |
