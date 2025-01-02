@@ -54,6 +54,11 @@ jobs:
         build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
         ls -la Build/NX669J/RELEASE_GCC5/FV/
         
+    - name: Debug Build Directory
+      run: |
+        echo "Checking Build Directory Contents:"
+        ls -R Build/NX669J/
+        
     - name: Upload Build
       uses: actions/upload-artifact@v3
       with:
