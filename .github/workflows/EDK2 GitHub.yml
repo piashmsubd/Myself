@@ -26,23 +26,25 @@ jobs:
         
     - name: Clone EDK2
       run: |
-        pwd
-        ls -la
         git clone https://github.com/tianocore/edk2.git --recursive
         cd edk2
         git submodule update --init --recursive
         make -C BaseTools
+        . edksetup.sh
         
-    - name: Setup Files
+    - name: Create Build Directory
       run: |
+        ls -la
         mkdir -p edk2/NX669J
-        sudo cp NX669J.dsc edk2/NX669J/
-        sudo cp NX669J.fdf edk2/NX669J/
+        cp -v NX669J.dsc edk2/NX669J/
+        cp -v NX669J.fdf edk2/NX669J/
         
     - name: Build EDK2
       run: |
         cd edk2
         . edksetup.sh
+        export PACKAGES_PATH=$PWD:$PWD/NX669J
+        export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
         build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
         
     - name: Upload Build
