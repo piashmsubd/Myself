@@ -26,38 +26,28 @@ jobs:
         
     - name: Clone EDK2
       run: |
-        pwd
         git clone https://github.com/tianocore/edk2.git --recursive
         cd edk2
         git submodule update --init --recursive
         make -C BaseTools
-        
-    - name: Setup Environment
-      run: |
-        cd edk2
         . edksetup.sh BaseTools
         
-    - name: Prepare Device Files
+    - name: Setup Device Files
       run: |
+        pwd
         mkdir -p edk2/NX669J
-        cp -v *.dsc edk2/NX669J/
-        cp -v *.fdf edk2/NX669J/
+        cp -v *.{dsc,fdf} edk2/NX669J/ || true
         ls -la edk2/NX669J/
         
-    - name: Build EDK2
+    - name: Build Project
       run: |
         cd edk2
         . edksetup.sh
         export WORKSPACE=$PWD
         export PACKAGES_PATH=$PWD:$PWD/NX669J
         export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
-        build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
-        ls -la Build/NX669J/RELEASE_GCC5/FV/
-        
-    - name: Debug Build Directory
-      run: |
-        echo "Checking Build Directory Contents:"
-        ls -R Build/NX669J/
+        source edksetup.sh
+        build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE -D DEBUG_ON_SERIAL_PORT
         
     - name: Upload Build
       uses: actions/upload-artifact@v3
