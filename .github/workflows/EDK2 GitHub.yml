@@ -52,3 +52,4 @@ jobs:
       with:
         name: edk2-NX669J
         path: edk2/Build/NX669J/RELEASE_GCC5/FV/
+        
