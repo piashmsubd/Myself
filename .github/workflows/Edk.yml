@@ -35,6 +35,7 @@ jobs:
     - name: Setup Device Files
       run: |
         pwd
+        ls -la
         mkdir -p edk2/NX669J
         cp -v *.{dsc,fdf} edk2/NX669J/ || true
         ls -la edk2/NX669J/
@@ -46,11 +47,17 @@ jobs:
         export WORKSPACE=$PWD
         export PACKAGES_PATH=$PWD:$PWD/NX669J
         export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
-        source edksetup.sh
         build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE -D DEBUG_ON_SERIAL_PORT
+        
+    - name: Check Build Output
+      run: |
+        ls -R edk2/Build/
         
     - name: Upload Build
       uses: actions/upload-artifact@v3
       with:
         name: edk2-NX669J
-        path: edk2/Build/NX669J/RELEASE_GCC5/FV/
+        path: |
+          edk2/Build/
+          edk2/Build/NX669J/**
+        if-no-files-found: warn
