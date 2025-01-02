@@ -1,21 +1,23 @@
 name: EDK2 Build for NX669J
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch:
 
 jobs:
   build:
+    name: Build EDK2
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout Device Tree
+    - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        path: device/nubia/NX669J
+        fetch-depth: 0
+        submodules: recursive
       
     - name: Install Dependencies
       run: |
@@ -24,26 +26,24 @@ jobs:
         
     - name: Clone EDK2
       run: |
-        git clone https://github.com/tianocore/edk2.git
+        git clone https://github.com/tianocore/edk2.git --depth=1
         cd edk2
         git submodule update --init
         make -C BaseTools
         
-    - name: Create Build Directory
-      run: |
-        mkdir -p device/nubia/NX669J
-        cp device/nubia/NX669J/NX669J.dsc device/nubia/NX669J/
-        cp device/nubia/NX669JNX669J.fdf device/nubia/NX669J/
-        
-    - name: Build EDK2
+    - name: Setup Build Environment
       run: |
         cd edk2
         . edksetup.sh
-        export PACKAGES_PATH=$PWD:$PWD/../device/nubia/NX669J
+        export PACKAGES_PATH=$PWD:$PWD/../
         export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
-        build -a AARCH64 -t GCC5 -p ../device/nubia/NX669J/NX669J.dsc -b RELEASE
         
-    - name: Upload Build
+    - name: Build Project
+      run: |
+        cd edk2
+        build -a AARCH64 -t GCC5 -p NX669J/NX669J.dsc -b RELEASE
+        
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v3
       with:
         name: edk2-NX669J
