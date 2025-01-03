@@ -31,10 +31,7 @@ jobs:
         echo "Cleaning cache..."
         rm -rf ~/.cache/*
 
-    - name: Clean temporary files
-      run: |
-        echo "Cleaning temporary files..."
-        rm -rf /tmp/*
+    
 
     - name: Verify disk space
       run: |
