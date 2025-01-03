@@ -1,43 +1,69 @@
-name: Full Clean Workspace
+name: Build Boot Image for REDMAGIC_6S_PRO
 
 on:
   push:
     branches:
       - main
+      - twrp-12.1
   pull_request:
     branches:
       - main
+      - twrp-12.1
 
 jobs:
-  clean:
+  build:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Clean workspace directories
-      run: |
-        echo "Cleaning workspace directories..."
-        sudo rm -rf /path/to/your/workspace/*
+    - name: Set up JDK
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'adopt'
+        java-version: '11'
 
-    - name: Remove Docker images and containers
+    - name: Install dependencies
       run: |
-        echo "Removing Docker images and containers..."
-        sudo docker system prune -a -f
+        sudo apt-get update
+        sudo apt-get install -y bc bison build-essential curl flex g++-multilib gcc-multilib git \
+          gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool \
+          libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush \
+          rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
 
-    - name: Clean cache directories
+    - name: Install repo command
       run: |
-        echo "Cleaning cache directories..."
-        sudo rm -rf ~/.cache/*
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        echo 'export PATH=~/bin:$PATH' >> ~/.bashrc
+        source ~/.bashrc
 
-    - name: Clean temporary files
+    - name: Initialize repo
       run: |
-        echo "Cleaning temporary files..."
-        sudo rm -rf /tmp/*
-        sudo rm -rf /var/tmp/*
+        mkdir -p ~/workspace
+        cd ~/workspace
+        ~/bin/repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
+        ~/bin/repo sync -j$(nproc --all)
 
-    - name: Verify disk space
+    - name: Clone device tree
       run: |
-        echo "Verifying disk space..."
-        df -h
+        cd ~/workspace
+        git clone https://github.com/piashmsubd/REDMAGIC_6S_PRO.git device/REDMAGIC_6S_PRO
+        ~/bin/repo sync -j$(nproc --all)
+
+    - name: Build Boot Image
+      env:
+        ALLOW_MISSING_DEPENDENCIES: true
+        LC_ALL: C
+      run: |
+        source build/envsetup.sh
+        lunch twrp_RED_MAGIC_6S_PRO-eng
+        make bootimage -j$(nproc --all)
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: boot-image
+        path: out/target/product/REDMAGIC_6S_PRO/boot.img
