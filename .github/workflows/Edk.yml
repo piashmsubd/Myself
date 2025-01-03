@@ -1,4 +1,4 @@
-name: Clean Workspace
+name: Clean Root Space
 
 on:
   push:
@@ -16,24 +16,35 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Clean workspace
+    - name: Remove unnecessary packages
       run: |
-        echo "Cleaning workspace..."
-        rm -rf /path/to/your/workspace/*
+        sudo apt-get autoremove
+        sudo apt-get clean
+        sudo apt-get autoclean
 
-    - name: Remove Docker images and containers
+    - name: Remove old kernels
       run: |
-        echo "Removing Docker images and containers..."
+        sudo apt-get remove --purge $(dpkg -l 'linux-*' | awk '/^ii/{ print $2}' | grep -E '[0-9]+\.[0-9]+\.[0-9]+' | grep -v $(uname -r))
+
+    - name: Remove orphaned packages
+      run: |
+        sudo deborphan | xargs sudo apt-get -y remove --purge
+
+    - name: Clear systemd journal logs
+      run: |
+        sudo journalctl --vacuum-time=2weeks
+
+    - name: Remove unused Docker images and containers
+      run: |
         docker system prune -a -f
 
-    - name: Clean cache
+    - name: Find and remove large files
       run: |
-        echo "Cleaning cache..."
-        rm -rf ~/.cache/*
+        sudo find / -type f -size +100M
+        sudo rm -f /path/to/large_file  # Replace with actual file paths
 
     
 
     - name: Verify disk space
       run: |
-        echo "Verifying disk space..."
         df -h
