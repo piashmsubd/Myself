@@ -1,4 +1,4 @@
-name: Clean Root Space
+name: Full System Reset
 
 on:
   push:
@@ -9,35 +9,39 @@ on:
       - main
 
 jobs:
-  clean:
+  reset:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Remove unnecessary packages
+    - name: Start full reset
       run: |
+        echo "Starting full system reset..."
+
+        # Remove all non-essential packages and files
+        sudo apt-get remove --purge -y $(dpkg --get-selections | grep -v deinstall | awk '{print $1}')
+        sudo apt-get autoremove -y
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
+
+        # Clean temporary files
+        sudo rm -rf /tmp/*
+        sudo rm -rf /var/tmp/*
+
+        # Clean Docker images and containers
+        sudo docker system prune -a -f
+
+        # Format and re-partition the root filesystem
+        sudo mkfs.ext4 /dev/sda1
         
-         sudo rm -rf /repo
+        # Reinstall essential packages
+        sudo apt-get update
+        sudo apt-get install -y build-essential curl wget
 
-    - name: Remove old kernels
-      run: |
-        sudo apt-get remove --purge $(dpkg -l 'linux-*' | awk '/^ii/{ print $2}' | grep -E '[0-9]+\.[0-9]+\.[0-9]+' | grep -v $(uname -r))
+        echo "Full system reset completed. Please reboot the system."
 
-    - name: Remove orphaned packages
-      run: |
-        sudo deborphan | xargs sudo apt-get -y remove --purge
-
-    - name: Clear systemd journal logs
-      run: |
-        sudo journalctl --vacuum-time=2weeks
-
-    - name: Remove unused Docker images and containers
-      run: |
-        docker system prune -a -f
-
-    
     - name: Verify disk space
       run: |
         df -h
