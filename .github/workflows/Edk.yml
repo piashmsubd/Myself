@@ -1,4 +1,4 @@
-name: Full System Reset
+name: Full Clean Workspace
 
 on:
   push:
@@ -9,39 +9,35 @@ on:
       - main
 
 jobs:
-  reset:
+  clean:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Start full reset
+    - name: Clean workspace directories
       run: |
-        echo "Starting full system reset..."
+        echo "Cleaning workspace directories..."
+        sudo rm -rf /path/to/your/workspace/*
 
-        # Remove all non-essential packages and files
-        sudo apt-get remove --purge -y $(dpkg --get-selections | grep -v deinstall | awk '{print $1}')
-        sudo apt-get autoremove -y
-        sudo apt-get clean
-        sudo rm -rf /var/lib/apt/lists/*
+    - name: Remove Docker images and containers
+      run: |
+        echo "Removing Docker images and containers..."
+        sudo docker system prune -a -f
 
-        # Clean temporary files
+    - name: Clean cache directories
+      run: |
+        echo "Cleaning cache directories..."
+        sudo rm -rf ~/.cache/*
+
+    - name: Clean temporary files
+      run: |
+        echo "Cleaning temporary files..."
         sudo rm -rf /tmp/*
         sudo rm -rf /var/tmp/*
 
-        # Clean Docker images and containers
-        sudo docker system prune -a -f
-
-        # Format and re-partition the root filesystem
-        sudo mkfs.ext4 /dev/sda1
-        
-        # Reinstall essential packages
-        sudo apt-get update
-        sudo apt-get install -y build-essential curl wget
-
-        echo "Full system reset completed. Please reboot the system."
-
     - name: Verify disk space
       run: |
+        echo "Verifying disk space..."
         df -h
