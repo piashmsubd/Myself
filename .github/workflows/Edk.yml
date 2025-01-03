@@ -18,10 +18,8 @@ jobs:
 
     - name: Remove unnecessary packages
       run: |
-        sudo apt-get autoremove
-        sudo apt-get clean
-        sudo apt-get autoclean
-        rm -rf /repo
+        
+         sudo rm -rf /repo
 
     - name: Remove old kernels
       run: |
