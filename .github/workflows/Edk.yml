@@ -26,6 +26,6 @@ jobs:
         echo "SSH Private Key:"
         cat ~/.ssh/id_rsa
 
-    - name: Run command on remote server
+    - name: Test SSH Connection
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@37.39.128.26 'echo "Hello from GitHub Actions!"'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@37.39.128.26 'echo "SSH connection successful!"'
