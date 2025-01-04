@@ -22,6 +22,6 @@ jobs:
 
     - name: Run command on remote server
       env:
-        RUNNER_IP: ${{ secrets.RUNNER_IP }}
+        RUNNER_IP: ${{ secrets.172.17.255.255 }}
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@${{ env.RUNNER_IP }} 'echo "Hello from GitHub Actions!"'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@${{ env.172.17.255.255 }} 'echo "Hello from GitHub Actions!"'
