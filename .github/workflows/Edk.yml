@@ -19,9 +19,8 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+        ssh-keyscan -H 37.39.128.26 >> ~/.ssh/known_hosts
 
     - name: Run command on remote server
-      env:
-        RUNNER_IP: ${{ secrets.172.17.255.255 }}
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@${{ env.172.17.255.255 }} 'echo "Hello from GitHub Actions!"'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@37.39.128.26 'echo "Hello from GitHub Actions!"'
