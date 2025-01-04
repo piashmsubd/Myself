@@ -1,4 +1,4 @@
-name: Set Up SSH
+name: Run SSH Command
 
 on:
   push:
@@ -6,24 +6,20 @@ on:
       - main
 
 jobs:
-  ssh-setup:
+  run-ssh:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Generate SSH Key
-      run: |
-        ssh-keygen -t rsa -b 4096 -C "github-actions@github.com" -f /home/runner/.ssh/id_rsa -N ""
-        cat /home/runner/.ssh/id_rsa.pub
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-    - name: Add SSH Key to GitHub Secrets
+    - name: Set up SSH
       run: |
-        echo "::add-mask::$(cat /home/runner/.ssh/id_rsa)"
-        echo "::add-mask::$(cat /home/runner/.ssh/id_rsa.pub)"
-        echo "SSH_PRIVATE_KEY=$(cat /home/runner/.ssh/id_rsa)" >> $GITHUB_ENV
-        echo "SSH_PUBLIC_KEY=$(cat /home/runner/.ssh/id_rsa.pub)" >> $GITHUB_ENV
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 
-    - name: Upload SSH Key
-      uses: actions/upload-artifact@v3
-      with:
-        name: ssh-key
-        path: /home/runner/.ssh/id_rsa
+    - name: Run command on remote server
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@<172.17.0.1> 'echo "Hello from GitHub Actions!"'
