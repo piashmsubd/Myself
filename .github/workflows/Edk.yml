@@ -21,5 +21,7 @@ jobs:
         ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 
     - name: Run command on remote server
+      env:
+        RUNNER_IP: ${{ secrets.RUNNER_IP }}
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@<172.17.0.1> 'echo "Hello from GitHub Actions!"'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa github-actions@${{ env.RUNNER_IP }} 'echo "Hello from GitHub Actions!"'
