@@ -8,16 +8,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.4
     
     steps:
-    - name: Create Repo Structure
+    - name: Set up GitHub Actions workspace
       run: |
-        mkdir -p lineage/.repo/local_manifests
+        mkdir -p $GITHUB_WORKSPACE/lineage/.repo/local_manifests
         
     - name: Create Manifest
       run: |
-        cat > lineage/.repo/local_manifests/nx669j.xml << 'EOF'
+        cat > $GITHUB_WORKSPACE/lineage/.repo/local_manifests/nx669j.xml << 'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <manifest>
           <project name="device_nubia_nx669j" 
@@ -49,31 +49,31 @@ jobs:
 
     - name: Initialize Repo
       run: |
-        cd lineage || mkdir lineage && cd lineage
+        cd $GITHUB_WORKSPACE/lineage
         repo init -u https://github.com/LineageOS/android.git -b lineage-21.0
 
     - name: Clone Device Trees
       run: |
-        cd lineage
+        cd $GITHUB_WORKSPACE/lineage
         git clone https://github.com/tangalbert919/android_device_nubia_nx669j device/nubia/nx669j
         git clone https://github.com/tangalbert919/android_device_nubia_sm8350-common device/nubia/sm8350-common
         git clone https://github.com/LineageOS/android_kernel_nubia_sm8350 kernel/nubia/sm8350
 
     - name: Sync Source
       run: |
-        cd lineage
+        cd $GITHUB_WORKSPACE/lineage
         repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
     - name: Setup ccache
       run: |
-        cd lineage
+        cd $GITHUB_WORKSPACE/lineage
         export USE_CCACHE=1
         export CCACHE_EXEC=/usr/bin/ccache
         ccache -M 50G
 
     - name: Build
       run: |
-        cd lineage
+        cd $GITHUB_WORKSPACE/lineage
         . build/envsetup.sh
         lunch lineage_nx669j-userdebug
         mka bacon -j$(nproc --all)
@@ -82,4 +82,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: lineage-nx669j
-        path: lineage/out/target/product/nx669j/lineage-*.zip
+        path: $GITHUB_WORKSPACE/lineage/out/target/product/nx669j/lineage-*.zip
