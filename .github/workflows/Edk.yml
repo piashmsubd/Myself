@@ -1,33 +1,61 @@
-architecture: arm64
-battery: {removable: False, capacity: 5050, tech: 'Li-Po'}
-bluetooth: {spec: '5.1', profiles: [A2DP]}
-brand: Nubia
-camera:
-  - {flash: 'LED', info: '64 MP'}
-  - {flash: '', info: '8 MP (Ultra Wide)'}
-  - {flash: '', info: '2 MP (Macro)'}
-  - {flash: '', info: '8 MP (Front)'}
-codename: redmagic6spro
-cpu: Kryo 680
-dimensions: {width: '77.1 mm', height: '169.9 mm', depth: '9.5 mm'}
-download_boot: With the device powered off, hold <kbd>Volume Down</kbd> + <kbd>Power</kbd>.
-gpu: Adreno 660
-image: redmagic6spro.png
-install_method: fastboot_nexus
-kernel: android_kernel_nubia_sm8350
-maintainers: [Your Name]
-name: RedMagic 6S Pro
-network: [2G GSM, 3G UMTS, 4G LTE, 5G]
-peripherals: [Fingerprint reader, Accelerometer, Gyroscope, Proximity sensor, Compass, GPS]
-ram: 8/12/16 GB
-recovery_boot: With the device powered off, hold <kbd>Volume Up</kbd> + <kbd>Power</kbd>.
-release: 2021-09
-screen: {size: '6.8', density: 387, resolution: '2400x1080', technology: 'AMOLED'}
-soc: Qualcomm SM8350 Snapdragon 888+
-storage: 128/256 GB
-tree: android_device_nubia_redmagic6spro
-type: phone
-vendor: Nubia
-vendor_short: nubia
-versions: [19.1]
-wifi: {spec: 'Wi-Fi 6E', dual_band: True, hotspot: True}
+name: Build LineageOS for RedMagic 6S Pro
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DEVICE: NX669J
+  LINEAGE_VERSION: 20.0
+  CCACHE_SIZE: 20G
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+
+    - name: Install repo
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        echo "${HOME}/bin" >> $GITHUB_PATH
+
+    - name: Initialize LineageOS source
+      run: |
+        mkdir lineage
+        cd lineage
+        repo init -u https://github.com/LineageOS/android.git -b lineage-${{ env.LINEAGE_VERSION }}
+        repo sync -c -j$(nproc --all)
+
+    - name: Clone device trees
+      run: |
+        cd lineage
+        git clone https://github.com/tangalbert919/android_device_nubia_nx669j device/nubia/NX669J
+        git clone https://github.com/tangalbert919/android_kernel_nubia_sm8350 kernel/nubia/sm8350
+
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        max-size: ${{ env.CCACHE_SIZE }}
+
+    - name: Build
+      run: |
+        cd lineage
+        source build/envsetup.sh
+        lunch lineage_${{ env.DEVICE }}-userdebug
+        mka bacon -j$(nproc --all)
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: lineage-${{ env.LINEAGE_VERSION }}-${{ env.DEVICE }}
+        path: lineage/out/target/product/${{ env.DEVICE }}/lineage-*.zip
