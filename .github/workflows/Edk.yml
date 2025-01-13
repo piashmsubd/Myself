@@ -1,71 +1,86 @@
-name: LineageOS Build for RedMagic 6S Pro
+name: Build LineageOS
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
-
-env:
-  DEVICE: NX669J
-  LINEAGE_VERSION: 20.0
-  CCACHE_SIZE: 20G
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        submodules: recursive
-
-    - name: Set up Git
+    - name: Create Repo Structure
       run: |
-        git config --global user.name "piashmsubd"
-        git config --global user.email "gooogleabal@gmail.com"
-
-    - name: Install dependencies
+        mkdir -p lineage/.repo/local_manifests
+        
+    - name: Create Manifest
+      run: |
+        cat > lineage/.repo/local_manifests/nx669j.xml << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <manifest>
+          <project name="device_nubia_nx669j" 
+                   path="device/nubia/nx669j" 
+                   remote="github" 
+                   revision="lineage-21" />
+          <project name="device_nubia_sm8350-common" 
+                   path="device/nubia/sm8350-common" 
+                   remote="github" 
+                   revision="lineage-21" />
+          <project name="kernel_nubia_sm8350" 
+                   path="kernel/nubia/sm8350" 
+                   remote="github" 
+                   revision="lineage-21" />
+        </manifest>
+        EOF
+        
+    - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python-is-python3
 
-    - name: Initialize LineageOS source
+    - name: Install repo
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        echo "PATH=~/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Initialize Repo
       run: |
         mkdir lineage
         cd lineage
-        repo init -u https://github.com/LineageOS/android.git -b lineage-${{ env.LINEAGE_VERSION }}
-        repo sync -c -j$(nproc --all)
+        repo init -u https://github.com/LineageOS/android.git -b lineage-21.0
 
-    - name: Clone device trees
+    - name: Clone Device Trees
       run: |
         cd lineage
-        git clone https://github.com/piashmsubd/REDMAGIC_6S_PRO.git device/nubia/NX669J
-        git clone https://github.com/piashmsubd/kernel_nubia_sm8350.git kernel/nubia/sm8350
+        git clone https://github.com/tangalbert919/android_device_nubia_nx669j device/nubia/nx669j
+        git clone https://github.com/tangalbert919/android_device_nubia_sm8350-common device/nubia/sm8350-common
+        git clone https://github.com/LineageOS/android_kernel_nubia_sm8350 kernel/nubia/sm8350
+
+    - name: Sync Source
+      run: |
+        cd lineage
+        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
     - name: Setup ccache
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        max-size: ${{ env.CCACHE_SIZE }}
-
-    - name: Build LineageOS
       run: |
         cd lineage
-        source build/envsetup.sh
-        lunch lineage_${{ env.DEVICE }}-userdebug
+        export USE_CCACHE=1
+        export CCACHE_EXEC=/usr/bin/ccache
+        ccache -M 50G
+
+    - name: Build
+      run: |
+        cd lineage
+        . build/envsetup.sh
+        lunch lineage_nx669j-userdebug
         mka bacon -j$(nproc --all)
 
-    - name: Upload build artifact
+    - name: Upload Build
       uses: actions/upload-artifact@v3
       with:
-        name: lineage-${{ env.LINEAGE_VERSION }}-${{ env.DEVICE }}
-        path: lineage/out/target/product/${{ env.DEVICE }}/lineage-*.zip
-
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: lineage/out/target/product/${{ env.DEVICE }}/lineage-*.zip
-        name: LineageOS ${{ env.LINEAGE_VERSION }} for RedMagic 6S Pro
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: lineage-nx669j
+        path: lineage/out/target/product/nx669j/lineage-*.zip
