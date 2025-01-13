@@ -54,11 +54,11 @@ jobs:
 
     - name: Clone Device Trees
       run: |
-        cd $GITHUB_WORKSPACE/lineage
+        cd lineage
         git clone https://github.com/tangalbert919/android_device_nubia_nx669j device/nubia/nx669j
         git clone https://github.com/tangalbert919/android_device_nubia_sm8350-common device/nubia/sm8350-common
         git clone https://github.com/LineageOS/android_kernel_nubia_sm8350 kernel/nubia/sm8350
-
+        
     - name: Sync Source
       run: |
         cd $GITHUB_WORKSPACE/lineage
