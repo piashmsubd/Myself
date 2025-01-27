@@ -1,84 +1,49 @@
-name: Build LineageOS
+name: Build Kernel for Nubia SM8350
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    
+    runs-on: ubuntu-latest
+
     steps:
-    - name: Set up GitHub Actions workspace
-      run: |
-        mkdir -p $GITHUB_WORKSPACE/lineage/.repo/local_manifests
-        
-    - name: Create Manifest
-      run: |
-        cat > $GITHUB_WORKSPACE/lineage/.repo/local_manifests/nx669j.xml << 'EOF'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <manifest>
-          <project name="device_nubia_nx669j" 
-                   path="device/nubia/nx669j" 
-                   remote="github" 
-                   revision="lineage-21" />
-          <project name="device_nubia_sm8350-common" 
-                   path="device/nubia/sm8350-common" 
-                   remote="github" 
-                   revision="lineage-21" />
-          <project name="kernel_nubia_sm8350" 
-                   path="kernel/nubia/sm8350" 
-                   remote="github" 
-                   revision="lineage-21" />
-        </manifest>
-        EOF
-        
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python-is-python3
+    - name: Checkout Kernel Source
+      uses: actions/checkout@v3
+      with:
+        repository: piashmsubd/android_kernel_nubia_sm8350  # আপনার কার্নেল সোর্স রেপো
+        ref: lineage-20  # আপনার ব্রাঞ্চ নাম যদি ভিন্ন হয়, তাহলে সেটা দিন
 
-    - name: Install repo
+    - name: Setup Dependencies
       run: |
-        mkdir -p ~/bin
-        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-        chmod a+x ~/bin/repo
-        echo "PATH=~/bin:$PATH" >> $GITHUB_ENV
+        sudo apt update
+        sudo apt install -y bc bison flex libssl-dev make gcc clang libncurses-dev
 
-    - name: Initialize Repo
+    - name: Setup GCC Cross-Compiler
       run: |
-        cd $GITHUB_WORKSPACE/lineage
-        repo init -u https://github.com/LineageOS/android.git -b lineage-21.0
+        wget https://developer.arm.com/-/media/Files/downloads/gnu-a/12.3.Rel1/binrel/gcc-arm-12.3-2023.05-x86_64-aarch64-none-linux-gnu.tar.xz
+        tar -xf gcc-arm-12.3-2023.05-x86_64-aarch64-none-linux-gnu.tar.xz
+        export PATH=$PATH:$(pwd)/gcc-arm-12.3-2023.05-x86_64-aarch64-none-linux-gnu/bin
+        echo "Cross-Compiler setup completed"
 
-    - name: Clone Device Trees
+    - name: Configure Kernel
       run: |
-        cd lineage
-        git clone https://github.com/tangalbert919/android_device_nubia_nx669j device/nubia/nx669j
-        git clone https://github.com/tangalbert919/android_device_nubia_sm8350-common device/nubia/sm8350-common
-        git clone https://github.com/piashmsubd/android_kernel_nubia_sm8350 kernel/nubia/sm8350
-    - name: Sync Source
-      run: |
-        cd $GITHUB_WORKSPACE/lineage
-        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+        export ARCH=arm64
+        export SUBARCH=arm64
+        export CROSS_COMPILE=aarch64-none-linux-gnu-
+        make nubia_defconfig  # আপনার ডিভাইসের সঠিক defconfig দিন
 
-    - name: Setup ccache
+    - name: Build Kernel
       run: |
-        cd $GITHUB_WORKSPACE/lineage
-        export USE_CCACHE=1
-        export CCACHE_EXEC=/usr/bin/ccache
-        ccache -M 50G
+        make -j$(nproc)  # সব কোর ব্যবহার করে বিল্ড
 
-    - name: Build
-      run: |
-        cd $GITHUB_WORKSPACE/lineage
-        . build/envsetup.sh
-        lunch lineage_nx669j-userdebug
-        mka bacon -j$(nproc --all)
-
-    - name: Upload Build
+    - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: lineage-nx669j
-        path: $GITHUB_WORKSPACE/lineage/out/target/product/nx669j/lineage-*.zip
+        name: Kernel-Build
+        path: arch/arm64/boot/Image.gz-dtb
