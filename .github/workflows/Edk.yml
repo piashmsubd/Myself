@@ -16,6 +16,7 @@ jobs:
     - name: Checkout Kernel Source
       uses: actions/checkout@v3
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         repository: piashmsubd/android_kernel_nubia_sm8350
         ref: lineage-20
         fetch-depth: 0
@@ -29,31 +30,27 @@ jobs:
       run: |
         mkdir -p toolchain
         cd toolchain
-        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/heads/master.tar.gz
-        mkdir gcc64
-        tar xf master.tar.gz -C gcc64
+        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/android-12.0.0_r1.tar.gz -O toolchain.tar.gz
+        mkdir -p gcc64
+        tar xf toolchain.tar.gz -C gcc64
         cd ..
-        export PATH=$GITHUB_WORKSPACE/toolchain/gcc64/bin:$PATH
-        export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain/gcc64/bin/aarch64-linux-android-
+        echo "PATH=$GITHUB_WORKSPACE/toolchain/gcc64/bin:$PATH" >> $GITHUB_ENV
+        echo "CROSS_COMPILE=aarch64-linux-android-" >> $GITHUB_ENV
+        echo "ARCH=arm64" >> $GITHUB_ENV
+        echo "SUBARCH=arm64" >> $GITHUB_ENV
 
     - name: Configure Kernel
       run: |
-        export ARCH=arm64
-        export SUBARCH=arm64
-        make nubia_defconfig
+        make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-android- nubia_defconfig
 
     - name: Build Kernel
       run: |
-        export ARCH=arm64
-        export SUBARCH=arm64
-        export PATH=$GITHUB_WORKSPACE/toolchain/gcc64/bin:$PATH
-        export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain/gcc64/bin/aarch64-linux-android-
-        make -j$(nproc)
+        make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-android- -j$(nproc)
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
       with:
         name: Kernel-Build
         path: |
-          arch/arm64/boot/Image*
-          arch/arm64/boot/dts/**/*.dtb
+          out/arch/arm64/boot/Image*
+          out/arch/arm64/boot/dts/**/*.dtb
