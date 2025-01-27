@@ -25,11 +25,11 @@ jobs:
         sudo apt install -y bc bison flex libssl-dev make gcc clang libncurses-dev
 
     - name: Setup GCC Cross-Compiler
-  run: |
-    wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/heads/master.tar.gz
-    tar -xzf master.tar.gz
-    export PATH=$PATH:$(pwd)/aarch64-linux-android-4.9/bin
-    echo "Cross-Compiler setup completed"
+      run: |
+        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/heads/master.tar.gz
+        tar -xzf master.tar.gz
+        export PATH=$PATH:$(pwd)/aarch64-linux-android-4.9/bin
+        echo "Cross-Compiler setup completed"
 
 
     - name: Configure Kernel
