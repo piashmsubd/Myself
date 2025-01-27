@@ -16,35 +16,44 @@ jobs:
     - name: Checkout Kernel Source
       uses: actions/checkout@v3
       with:
-        repository: piashmsubd/android_kernel_nubia_sm8350  # আপনার কার্নেল সোর্স রেপো
-        ref: lineage-20  # আপনার ব্রাঞ্চ নাম যদি ভিন্ন হয়, তাহলে সেটা দিন
+        repository: piashmsubd/android_kernel_nubia_sm8350
+        ref: lineage-20
+        fetch-depth: 0
 
     - name: Setup Dependencies
       run: |
-        sudo apt update
-        sudo apt install -y bc bison flex libssl-dev make gcc clang libncurses-dev
+        sudo apt-get update
+        sudo apt-get install -y bc bison build-essential flex libssl-dev make gcc clang libncurses-dev git-core gnupg ccache
 
     - name: Setup GCC Cross-Compiler
       run: |
+        mkdir -p toolchain
+        cd toolchain
         wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/heads/master.tar.gz
-        tar -xzf master.tar.gz
-        export PATH=$PATH:$(pwd)/aarch64-linux-android-4.9/bin
-        echo "Cross-Compiler setup completed"
-
+        mkdir gcc64
+        tar xf master.tar.gz -C gcc64
+        cd ..
+        export PATH=$GITHUB_WORKSPACE/toolchain/gcc64/bin:$PATH
+        export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain/gcc64/bin/aarch64-linux-android-
 
     - name: Configure Kernel
       run: |
         export ARCH=arm64
         export SUBARCH=arm64
-        export CROSS_COMPILE=aarch64-linux-android-4.9
-        make nubia_defconfig  # আপনার ডিভাইসের সঠিক defconfig দিন
+        make nubia_defconfig
 
     - name: Build Kernel
       run: |
-        make -j$(nproc)  # সব কোর ব্যবহার করে বিল্ড
+        export ARCH=arm64
+        export SUBARCH=arm64
+        export PATH=$GITHUB_WORKSPACE/toolchain/gcc64/bin:$PATH
+        export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain/gcc64/bin/aarch64-linux-android-
+        make -j$(nproc)
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
       with:
         name: Kernel-Build
-        path: arch/arm64/boot/Image.gz-dtb
+        path: |
+          arch/arm64/boot/Image*
+          arch/arm64/boot/dts/**/*.dtb
