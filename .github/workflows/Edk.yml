@@ -36,7 +36,7 @@ jobs:
       run: |
         export ARCH=arm64
         export SUBARCH=arm64
-        export CROSS_COMPILE=aarch64-none-linux-gnu-
+        export CROSS_COMPILE=aarch64-linux-android-4.9
         make nubia_defconfig  # আপনার ডিভাইসের সঠিক defconfig দিন
 
     - name: Build Kernel
