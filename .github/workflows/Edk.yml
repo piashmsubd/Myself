@@ -27,6 +27,7 @@ jobs:
         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
         chmod a+x ~/bin/repo
         export PATH=~/bin:$PATH
+        repo --version
 
     - name: Initialize repo
       run: |
@@ -34,7 +35,7 @@ jobs:
 
     - name: Sync repo
       run: |
-        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags || repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
     - name: Build TWRP
       run: |
