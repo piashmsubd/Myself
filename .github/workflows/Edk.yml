@@ -1,46 +1,43 @@
-# TWRP Build Configuration
-name: TWRP_NX669J
-description: "Custom TWRP Recovery for NX669J (RedMagic 6S)"
-version: 12.1
-maintainer: "Your Name (Dr.Brown28)"
-github:
-  repository: piashmsubd/TWRP_NX669J_12.1
-  branch: Twrp_12.1
-build:
-  os: ubuntu-20.04
-  arch: arm64
-  commands:
-    - . build/envsetup.sh
-    - export ALLOW_MISSING_DEPENDENCIES=true
-    - lunch twrp_NX669J-eng
-    - mka recoveryimage
-device:
-  name: NX669J
-  codename: NX669J
-  manufacturer: Nubia
-dependencies:
-  - repo: https://github.com/TeamWin/android_bootable_recovery
-    branch: android-12.1
-  - repo: https://github.com/LineageOS/android_kernel_nubia_sm8350
-    branch: lineage-19.1
-  - repo: https://github.com/LineageOS/android_device_qcom_common
-    branch: lineage-19.1
-  - repo: https://github.com/TheMuppets/proprietary_vendor_nubia
-    branch: lineage-19.1
-build_output:
-  path: out/target/product/NX669J/recovery.img
-  format: img
-upload:
-  hosting: GitHub Releases
-  repository: piashmsubd/TWRP_NX669J_12.1
-  tag: "twrp-v12.1"
-  release_name: "TWRP 12.1 for NX669J"
-  description: |
-    Custom TWRP Recovery for NX669J (RedMagic 6S).
-    Features:
-    - Android 12.1 support
-    - File encryption/decryption
-    - DTBO and A/B slot management
-    - Stock ROM flashing support
-    - Super unmap support
-    - More customizations.
+name: Build TWRP Recovery
+
+on:
+  push:
+    branches:
+      - Twrp_12.1
+  pull_request:
+    branches:
+      - Twrp_12.1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig python3 python3-pip
+
+    - name: Set up repo
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        export PATH=~/bin:$PATH
+
+    - name: Initialize repo
+      run: |
+        repo init -u https://github.com/piashmsubd/TWRP_NX669J_12.1.git -b Twrp_12.1
+
+    - name: Sync repo
+      run: |
+        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+    - name: Build TWRP
+      run: |
+        source build/envsetup.sh
+        lunch twrp_NX669J-eng
+        mka recoveryimage
