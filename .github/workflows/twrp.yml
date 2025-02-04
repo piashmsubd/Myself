@@ -25,16 +25,20 @@ jobs:
         gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev \
         lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig python3 python3-pip wget
 
-    - name: Set up repo
+    - name: Install Git-Repo
       run: |
-        mkdir -p ~/bin
-        wget https://storage.googleapis.com/git-repo-downloads/repo -O ~/bin/repo
+        mkdir ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
         chmod a+x ~/bin/repo
-        export PATH=~/bin:$PATH
-        repo --version
+        sudo ln -sf ~/bin/repo /usr/bin/repo
+
 
     - name: Initialize repo
       run: |
+        mkdir workspace
+        cd workspace
+        git config --global user.name "Samuel Kendall"
+        git config --global user.email "kinguser981@gmail.com"
         repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
         git clone --depth=1 https://github.com/piashmsubd/TWRP_NX669J_12.1.git -b Twrp_12.1 device/nubia/NX669J
 
