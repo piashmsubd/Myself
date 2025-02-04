@@ -30,8 +30,7 @@ jobs:
         mkdir -p ~/bin
         wget https://storage.googleapis.com/git-repo-downloads/repo -O ~/bin/repo
         chmod a+x ~/bin/repo
-        echo 'export PATH=~/bin:$PATH' >> ~/.bashrc
-        source ~/.bashrc
+        export PATH=~/bin:$PATH
         repo --version
 
     - name: Initialize repo
