@@ -1,58 +1,46 @@
-name: Build Kernel for Nubia SM8350
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout Kernel Source
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        repository: piashmsubd/NX669J-kernel
-        ref: main
-        fetch-depth: 0
-
-    - name: Setup Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bc bison build-essential flex libssl-dev make gcc clang libncurses-dev git-core gnupg ccache
-
-    - name: Setup GCC Cross-Compiler
-      run: |
-        mkdir -p toolchain
-        cd toolchain
-        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/android-12.0.0_r1.tar.gz -O toolchain.tar.gz
-        mkdir -p gcc64
-        tar xf toolchain.tar.gz -C gcc64
-        cd ..
-        echo "PATH=$GITHUB_WORKSPACE/toolchain/gcc64/bin:$PATH" >> $GITHUB_ENV
-        echo "CROSS_COMPILE=aarch64-linux-android-" >> $GITHUB_ENV
-        echo "ARCH=arm64" >> $GITHUB_ENV
-        echo "SUBARCH=arm64" >> $GITHUB_ENV
-
-    - name: Configure Kernel
-      run: |
-        cd msm-5.4
-        make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-android- vendor/nubia_NX669J_defconfig
-
-    - name: Build Kernel
-      run: |
-        cd msm-5.4
-        make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-android- -j$(nproc)
-
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: Kernel-Build
-        path: |
-          msm-5.4/out/arch/arm64/boot/Image*
-          msm-5.4/out/arch/arm64/boot/dts/**/*.dtb
+# TWRP Build Configuration
+name: TWRP_NX669J
+description: "Custom TWRP Recovery for NX669J (RedMagic 6S)"
+version: 12.1
+maintainer: "Your Name (Dr.Brown28)"
+github:
+  repository: piashmsubd/TWRP_NX669J_12.1
+  branch: Twrp_12.1
+build:
+  os: ubuntu-20.04
+  arch: arm64
+  commands:
+    - . build/envsetup.sh
+    - export ALLOW_MISSING_DEPENDENCIES=true
+    - lunch twrp_NX669J-eng
+    - mka recoveryimage
+device:
+  name: NX669J
+  codename: NX669J
+  manufacturer: Nubia
+dependencies:
+  - repo: https://github.com/TeamWin/android_bootable_recovery
+    branch: android-12.1
+  - repo: https://github.com/LineageOS/android_kernel_nubia_sm8350
+    branch: lineage-19.1
+  - repo: https://github.com/LineageOS/android_device_qcom_common
+    branch: lineage-19.1
+  - repo: https://github.com/TheMuppets/proprietary_vendor_nubia
+    branch: lineage-19.1
+build_output:
+  path: out/target/product/NX669J/recovery.img
+  format: img
+upload:
+  hosting: GitHub Releases
+  repository: piashmsubd/TWRP_NX669J_12.1
+  tag: "twrp-v12.1"
+  release_name: "TWRP 12.1 for NX669J"
+  description: |
+    Custom TWRP Recovery for NX669J (RedMagic 6S).
+    Features:
+    - Android 12.1 support
+    - File encryption/decryption
+    - DTBO and A/B slot management
+    - Stock ROM flashing support
+    - Super unmap support
+    - More customizations.
